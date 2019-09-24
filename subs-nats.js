@@ -25,7 +25,7 @@ var redis = require("redis"),
 ///////////////////////////////////////
 
 let start;
-const loop = 100000000;
+const loop = 1000000;
 const hash = loop*0.05;
 let received = 0;
 
