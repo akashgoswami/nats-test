@@ -60,3 +60,7 @@ nats.subscribe('test', {'queue':'result.workers'}, function(msg) {
         });
     }
 });
+
+setInterval(function(){
+    console.log("Received ", received);
+},10000)
