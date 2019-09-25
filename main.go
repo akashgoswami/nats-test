@@ -84,6 +84,7 @@ func main () {
         if received % chunk == 0{
         	elapsed := time.Since(start)
             fmt.Println("Received last", chunk, "at rate m/s", float64(chunk)/elapsed.Seconds())
+            
             start = time.Now()
          }
     })
@@ -94,7 +95,7 @@ func main () {
         
         data, err := db.Get([]byte(m.Data), nil)
         if err != nil {
-            fmt.Println("Coud not find", string(m.Data))
+            //fmt.Println("Coud not find", string(m.Data))
             missed++
         } else {
             //fmt.Println("Found", string(data))
