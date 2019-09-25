@@ -40,7 +40,7 @@ function query(specific){
         if (specific) index = specific;     
             
         if (queries % 1000 == 0 )process.stdout.write(".");
-        nats.requestOne('state.query', 'state.'+index.toString(), {'max':1}, 1000, function(response) {
+        nats.requestOne('state.query', 'state.'+index.toString(), {'max':1}, 3000, function(response) {
 
             if(response instanceof NATS.NatsError && response.code === NATS.REQ_TIMEOUT) {
                 console.log(index, 'not found');

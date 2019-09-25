@@ -53,6 +53,7 @@ func main () {
             case t := <-ticker.C:
                 //fmt.Println("Tick at", t)
                 t = t
+                // write any unstored transactions to db
                 if batch.Len() > 0 {
                     mutex.Lock()
                     err = db.Write(batch, nil)
@@ -73,13 +74,14 @@ func main () {
             start = time.Now()
          }
 
-        mutex.Lock()
         batch.Put([]byte(m.Subject) , []byte(m.Data))
-        if received % 1000 == 0{
+    
+        if received % 2048 == 0 {
+            mutex.Lock()
             err = db.Write(batch, nil)
             batch.Reset();
+            mutex.Unlock()
         }
-        mutex.Unlock()
         
         if received % chunk == 0{
         	elapsed := time.Since(start)
@@ -88,11 +90,10 @@ func main () {
             start = time.Now()
          }
     })
-    sub.SetPendingLimits(-1, -1)
+    sub.SetPendingLimits(100000, -1)
 
-    querysub, _ := nc.Subscribe("state.query", func(m *nats.Msg) {
+    nc.Subscribe("state.query", func(m *nats.Msg) {
         //fmt.Println("Received query", m.Data)
-        
         data, err := db.Get([]byte(m.Data), nil)
         if err != nil {
             //fmt.Println("Coud not find", string(m.Data))
@@ -103,11 +104,7 @@ func main () {
             nc.Flush();
             hit++
         }
-            
-
-
     })
-    querysub.SetPendingLimits(-1, -1)
 
 
 	c := make(chan os.Signal, 1)
