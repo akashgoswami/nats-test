@@ -21,9 +21,10 @@ func configure(app *aero.Application, nc *nats.Conn) *aero.Application {
 	app.Get("/api/:key", func(ctx aero.Context) error {
 		
 		key := ctx.Get("key")
+
 		msg, err := nc.Request("query", []byte(key), 5*time.Second)
     	if err != nil {
-    		return ctx.String("Not Found")
+    		return ctx.Error(404)
     	} else {
     		return ctx.Bytes(msg.Data);
     	}
@@ -39,6 +40,7 @@ func configure(app *aero.Application, nc *nats.Conn) *aero.Application {
 		//fmt.Println("Save key", key, "with content", string(body))
 		
 		nc.Publish(key, body)
+		nc.flush()
    		return ctx.String("OK")
    		
    	})
