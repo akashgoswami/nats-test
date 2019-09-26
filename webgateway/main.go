@@ -18,11 +18,10 @@ func main() {
 
 func configure(app *aero.Application, nc *nats.Conn) *aero.Application {
 	
-	app.Get("/query/:key", func(ctx aero.Context) error {
+	app.Get("/api/:key", func(ctx aero.Context) error {
 		
 		key := ctx.Get("key")
-		key = "state."+key
-		msg, err := nc.Request("state.query", []byte(key), 5*time.Second)
+		msg, err := nc.Request("query", []byte(key), 5*time.Second)
     	if err != nil {
     		return ctx.String("Not Found")
     	} else {
@@ -30,10 +29,11 @@ func configure(app *aero.Application, nc *nats.Conn) *aero.Application {
     	}
 	})
 
-	app.Post("/store/:key", func(ctx aero.Context) error {
+	app.Post("/api/:key", func(ctx aero.Context) error {
 		
 		key := ctx.Get("key")
-		key = "state."+key
+
+		key = "store."+key
 		body, _ := ctx.Request().Body().Bytes()
 
 		//fmt.Println("Save key", key, "with content", string(body))
@@ -42,6 +42,18 @@ func configure(app *aero.Application, nc *nats.Conn) *aero.Application {
    		return ctx.String("OK")
    		
    	})
-	
+
+	app.Delete("/api/:key", func(ctx aero.Context) error {
+		
+		key := ctx.Get("key")
+		//fmt.Println("Save key", key, "with content", string(body))
+		_, err := nc.Request("delete", []byte(key), 5*time.Second)		
+    	if err != nil {
+    		return ctx.Error(404)
+    	} else {
+    		return ctx.String("Ok")
+    	}
+   	})
+   	
 	return app
 }

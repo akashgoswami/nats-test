@@ -14,6 +14,7 @@ import (
 	"os"
 	"os/signal"
 	"sync"
+	"strings"
 )
 
 
@@ -38,6 +39,7 @@ func main () {
     received := 0
     missed := 0
     hit := 0
+    deleted := 0
     
     start := time.Now()
     batch := new(leveldb.Batch)
@@ -66,15 +68,17 @@ func main () {
     }()
     
 
-    sub, _ :=  nc.QueueSubscribe("state.>", "state.workers", func(m *nats.Msg) {
+    sub, _ :=  nc.QueueSubscribe("store.>", "store.workers", func(m *nats.Msg) {
         
          received++;
 
          if received == 1 {
             start = time.Now()
          }
+        key := strings.TrimPrefix(m.Subject, "store.")
+        
         //fmt.Println("Received store", m.Data)
-        batch.Put([]byte(m.Subject) , []byte(m.Data))
+        batch.Put([]byte(key) , []byte(m.Data))
     
         if received % 2048 == 0 {
             mutex.Lock()
@@ -92,11 +96,12 @@ func main () {
     })
     sub.SetPendingLimits(100000, -1)
 
-    nc.Subscribe("state.query", func(m *nats.Msg) {
+    nc.Subscribe("query", func(m *nats.Msg) {
+        
         //fmt.Println("Received query", string(m.Data))
         data, err := db.Get([]byte(m.Data), nil)
         if err != nil {
-            fmt.Println("Coud not find", string(m.Data))
+            //fmt.Println("Could not find", string(m.Data))
             missed++
         } else {
             //fmt.Println("Found", string(data))
@@ -106,7 +111,23 @@ func main () {
         }
     })
 
+    nc.Subscribe("delete", func(m *nats.Msg) {
+        
+        //fmt.Println("Received query", string(m.Data))
+        exists, _ := db.Has([]byte(m.Data), nil)
 
+        if exists {
+            db.Delete([]byte(m.Data), nil)
+            //fmt.Println("Found", string(data))
+            m.Respond([]byte("OK"))
+            nc.Flush();
+            deleted++
+        } else {
+            missed++;
+        }
+    })
+    
+    
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
 	<-c
