@@ -40,7 +40,7 @@ func configure(app *aero.Application, nc *nats.Conn) *aero.Application {
 		//fmt.Println("Save key", key, "with content", string(body))
 		
 		nc.Publish(key, body)
-		nc.flush()
+		nc.Flush()
    		return ctx.String("OK")
    		
    	})
